@@ -54,11 +54,51 @@ const handleDelete = async(id) => {
 const [fileProgress, setFileProgress] = useState(0);
 const [uploadingFile, setUploadingFile] = useState("")
 
+const [isDragging, setIsDragging] = useState(false);
+const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true)
+}
+const handleDragLeave = () =>{
+    setIsDragging(false)
+}
+
+const handleDrop = async(e) => {
+    e.preventDefault()
+    setIsDragging(false)
+
+    const files = e.dataTransfer.files
+    if(!files.length) return
+
+    for (let file of files){
+        await uploadFile(file)
+    }
+    fetchFiles()
+}
+
+const uploadFile = async(file) => {
+    const formData = new FormData
+    formData.append("file",file)
+    await api.post('/upload',formData)
+}
+
+
 return (
     <div className="p-6 bg-gray-100 min-h-screen">
         <h1 className="text-2xl font-bold mb-4">File Manager</h1>
         
-        <input className="mb-4 block" type="file" onChange={handleUpload} />
+        <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className={`border-2 border-dashed rounded-lg p-6 text-center transition${isDragging ? "bg-blue-100 border-blue-500" : "bg-white"}`}>
+            <p className="text-gray-600">Drag & Drop files here or click to upload</p>
+            <input className="hidden" id="fileInput" type="file"multiple onChange={(e) => {
+                const files = e.target.files;
+                    for (let file of files) {
+                         uploadFile(file);
+                    }
+                fetchFiles();
+            }}
+            />
+            <label htmlFor="fileInput"className="mt-3 inline-block cursor-pointer bg-blue-500 text-white px-4 py-2 rounded">Browse Files</label>
+        </div>
         {fileProgress > 0 && (
             <div className="w-full bg-gray-200 rounded h-4 mt-2">
                 <div className="bg-blue-500 h-4 rounded text-xs text-white flex items-center justify-center" style={{ width: `${fileProgress}%` }}>
